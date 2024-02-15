@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sudoku Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    #tabs {
+      display: flex;
+      /* Change flex-direction to row for horizontal tabs */
+      flex-direction: row;
+      background-color: #f0f0f0;
+      margin-bottom: 15px;
+      margin-top: 15px;
+    }
+
+    .tab {
+      display: flex;
+      flex-direction: column;
+      padding: 10px 20px;
+      cursor: pointer;
+      border: 2px solid black;
+      margin-right: 3px;
+      
+    }
+
+    .tab a {
+      text-decoration: none;
+      color: black;
+    }
+
+    .tab:hover {
+      background-color: #ddd;
+    }
+
+    .tab.active {
+      background-color: #fff;
+      border-bottom: 2px solid #007bff;
+    }
+
+    #content {
+      padding: 20px;
+    }
+
+    #boardContainer {
+      margin-bottom: 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+    }
+
+    select {
+      width: 100%;
+      height: 100%;
+      border: none;
+      text-align-last: center;
+      font-size: 18px;
+    }
+
+    td {
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      border: 1px solid #ccc;
+      font-size: 18px;
+    }
+
+    .error {
+      color: red;
+      font-size: 14px;
+    }
+
+    #buttonContainer {
+      display: flex;
+      margin-top: 16px;
+      gap: 15px;
+    }
+
+    #submitBtn {
+      background-color: red;
+      font-weight: bold;
+      color: black;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    
+    h1{
+        text-align: center;
+    }
+
+    p{
+        text-align: center;
+    }
+
+    button{
+  background-color: #4CAF50; /* Green background */
+  color: white; /* White text color */
+  padding: 10px 20px; /* Padding inside the button */
+  border: none; /* Remove border */
+  border-radius: 5px; /* Optional: Add rounded corners */
+  cursor: pointer; /* Add a cursor on hover */
+  }
+  </style>
+
+  <script src = "settings.js"></script>
+</head>
+<body>
+  <div id="tabs">
+    <div class="tab"><a href="index.html">Sudoku Solver</a></div>
+    <div class="tab"><a href="solver.html">Solution Checker</a></div>
+  </div>
+
+  <h1> Sudoku Solver</h1>
+  <p> Please enter the numbers given to you in the beginning of the game. After you're done, hit submit.</p>
+  <br>
+
+  <div id="boardContainer">
+    <table id="sudokuBoard"></table>
+    <p class="error" id="errorMessage"></p>
+  </div>
+  <div id="buttonContainer">
+    <button id="submitBtn" onclick="submitBoard()">Submit</button>
+
+  </div>
+
+  <script>
+      const board = [
+    ["", "", "", "", "", "", "", "", ""],
+    ["", "", "", "", "", "", "", "", ""],
+    ["", "", "", "", "", "", "", "", ""],
+    ["", "", "", "", "", "", "", "", ""],
+    ["", "", "", "", "", "", "", "", ""],
+    ["", "", "", "", "", "", "", "", ""],
+    ["", "", "", "", "", "", "", "", ""],
+    ["", "", "", "", "", "", "", "", ""],
+    ["", "", "", "", "", "", "", "", ""]
+  ];
+
+  function createSudokuBoard() {
+    const table = document.getElementById("sudokuBoard");
+
+    // Clear existing content in the table
+    table.innerHTML = "";
+
+    for (let i = 0; i < 9; i++) {
+        const row = document.createElement("tr");
+        for (let j = 0; j < 9; j++) {
+            const cell = document.createElement("td");
+            const select = document.createElement("select");
+
+            const emptyOption = document.createElement("option");
+            emptyOption.value = "";
+            emptyOption.text = "";
+            select.add(emptyOption);
+
+            for (let num = 1; num <= 9; num++) {
+                const option = document.createElement("option");
+
+                option.value = num;
+                option.text = num;
+                select.add(option);
+            }
+
+            if (board[i][j] !== "") {
+                select.value = board[i][j];
+                select.disabled = true;
+            }
+
+            select.addEventListener("change", function () {
+                validateInput(this, i, j);
+            });
+
+            cell.appendChild(select);
+            row.appendChild(cell);
+        }
+        table.appendChild(row);
+    }
+
+    // Clear existing content in the button container
+    const buttonContainer = document.getElementById("buttonContainer");
+    buttonContainer.innerHTML = "";
+
+    // Add Solve and Clear buttons
+    const solveButton = document.createElement("button");
+    solveButton.textContent = "Solve";
+    solveButton.onclick = solveBoard;
+
+    const clearButton = document.createElement("button");
+    clearButton.textContent = "Clear";
+    clearButton.onclick = clearBoard;
+
+    buttonContainer.appendChild(solveButton);
+    buttonContainer.appendChild(clearButton);
+}
+
+    function validateInput(select, row, col) {
+      const selectedValue = parseInt(select.value);
+      if (!isNaN(selectedValue)) {
+        board[row][col] = selectedValue;
+        document.getElementById("errorMessage").innerText = "";
+      } else {
+        select.value = "";
+        document.getElementById("errorMessage").innerText = "Please select a valid number.";
+      }
+    }
+
+    function submitBoard() {
+      // You can perform additional actions here before updating the board
+      console.log("Board updated:", board);
+    }
+
+    function solveBoard() {
+      if (solveSudoku()) {
+        updateBoard();
+        console.log("Sudoku puzzle solved!");
+      } else {
+        document.getElementById("errorMessage").innerText = "No solution found for the current board.";
+      }
+    }
+    function isValid(board, row, col, num) {
+    // Check if the number is already present in the row or column
+    for (let i = 0; i < 9; i++) {
+        if (board[row][i] == num || board[i][col] == num) {
+            return false;
+        }
+    }
+
+    // Check if the number is present in the 3x3 subgrid
+    const startRow = 3 * Math.floor(row / 3);
+    const startCol = 3 * Math.floor(col / 3);
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            if (board[startRow + i][startCol + j] == num) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+
+    function solveSudoku() {
+      return solveSudokuHelper(board);
+    }
+
+    function solveSudokuHelper(board) {
+      const emptyCell = findEmptyCell(board);
+
+      if (!emptyCell) {
+        // If no empty cell is found, the Sudoku is solved
+        return true;
+      }
+
+      const [row, col] = emptyCell;
+
+      for (let num = 1; num <= 9; num++) {
+        if (isValid(board, row, col, num)) {
+          board[row][col] = num;
+
+          // Recursively try to solve the remaining puzzle
+          if (solveSudokuHelper(board)) {
+            return true;
+          }
+
+          // If the current assignment leads to an invalid solution, backtrack
+          board[row][col] = "";
+        }
+      }
+
+      // If no number can be placed, backtrack to the previous step
+      return false;
+    }
+
+    function findEmptyCell(board) {
+      for (let i = 0; i < 9; i++) {
+        for (let j = 0; j < 9; j++) {
+          if (board[i][j] === "") {
+            return [i, j];
+          }
+        }
+      }
+      return null;
+    }
+
+    function clearBoard() {
+      for (let i = 0; i < 9; i++) {
+        for (let j = 0; j < 9; j++) {
+          board[i][j] = "";
+        }
+      }
+      createSudokuBoard();
+      document.getElementById("errorMessage").innerText = "";
+    }
+
+    function updateBoard() {
+      createSudokuBoard();
+    }
+
+    window.onload = createSudokuBoard;
+  </script>
+<h1>How to Play the Game: </h1>
+<p>To win the game, every row and column must contain the numbers 1 through 9 exacty once. Additionally, each 3x3 square must contain 1 through 9 exactly once.</p>
+<br><br>
+<h1>Settings:</h1>
+<label for="fontSize">Text Size:</label>
+<select id="fontSize" onchange="changeFontSize()">
+  <option value="small">Small</option>
+  <option value="medium" selected>Medium</option>
+  <option value="large">Large</option>
+</select>
+<br>
+<br>
+<label for="colorSelect">Button Color:</label>
+  <select id="colorSelect" onchange="changeButtonColor()">
+    <option value="red">Red</option>
+    <option value="orange">Orange</option>
+    <option value="yellow">Yellow</option>
+    <option value="green">Green</option>
+    <option value="blue">Blue</option>
+    <option value="indigo">Indigo</option>
+    <option value="violet">Violet</option>
+  </select>
+  <p>Board Size:</p>
+  <p id = smaller> Hint:(If you're using a smaller device like a cell phone, you will have to put the phone on the smallest setting.
+    Additionally, if you're using a larger device like a desktop it may be appropriate to increase grid size for those with bad eyesight.
+  </p>
+<div id="buttonContainer">
+    <button onclick="changeBoardSize('small')">Small</button>
+    <button onclick="changeBoardSize('medium')">Medium</button>
+    <button onclick="changeBoardSize('large')">Large</button>
+  </div>
+</body>
+</html>
